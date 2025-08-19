@@ -177,7 +177,8 @@ async function processAnalysisAsync(
             questions, 
             request.llmProvider, 
             llmClient,
-            apiKeys
+            apiKeys,
+            'quick'
           );
           allResults.push(...doc1Results.map(r => ({ ...r, parameter: param })));
           
@@ -187,7 +188,8 @@ async function processAnalysisAsync(
               questions, 
               request.llmProvider, 
               llmClient,
-              apiKeys
+              apiKeys,
+              'quick'
             );
             allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param })));
           }
@@ -203,7 +205,8 @@ async function processAnalysisAsync(
                 questions, 
                 request.llmProvider, 
                 llmClient,
-                apiKeys
+                apiKeys,
+                'comprehensive'
               );
               allResults.push(...doc1Results.map(r => ({ ...r, parameter: param, phase })));
               
@@ -213,7 +216,8 @@ async function processAnalysisAsync(
                   questions, 
                   request.llmProvider, 
                   llmClient,
-                  apiKeys
+                  apiKeys,
+                  'comprehensive'
                 );
                 allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param, phase })));
               }
@@ -231,7 +235,8 @@ async function processAnalysisAsync(
         questions, 
         request.llmProvider, 
         llmClient,
-        apiKeys
+        apiKeys,
+        request.analysisMode
       );
 
       // Process document 2 if dual mode
@@ -241,7 +246,8 @@ async function processAnalysisAsync(
           questions, 
           request.llmProvider, 
           llmClient,
-          apiKeys
+          apiKeys,
+          request.analysisMode
         );
       }
     }
@@ -287,7 +293,8 @@ async function processDocument(
   questions: string[],
   provider: string,
   llmClient: LLMClients,
-  apiKeys: any
+  apiKeys: any,
+  analysisMode: string = 'quick'
 ) {
   const chunks = TextProcessor.chunkText(text);
   const results = [];
@@ -305,9 +312,10 @@ async function processDocument(
           ...result
         });
 
-        // Wait 10 seconds between chunks as specified
+        // Wait between chunks to avoid rate limiting (shorter for quick analysis)
         if (i < chunks.length - 1) {
-          await TextProcessor.delay(10);
+          const delay = analysisMode === 'quick' ? 1 : 3;
+          await TextProcessor.delay(delay);
         }
       } catch (error) {
         console.error(`Error processing chunk ${i} for question "${question}":`, error);
