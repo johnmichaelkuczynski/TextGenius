@@ -1,22 +1,29 @@
 export class FileParser {
   static async parseFile(file: Buffer, filename: string): Promise<string> {
+    if (!file || file.length === 0) {
+      throw new Error('File is empty or corrupted');
+    }
+
     const extension = filename.toLowerCase().split('.').pop();
+    console.log('Parsing file:', { filename, extension, size: file.length });
 
     switch (extension) {
       case 'txt':
-        return file.toString('utf-8');
+        const text = file.toString('utf-8');
+        if (!text || text.trim().length === 0) {
+          throw new Error('Text file appears to be empty');
+        }
+        return text;
       
       case 'pdf':
-        // For now, return an error message since we can't include PDF parsing libraries
-        throw new Error('PDF parsing not implemented yet. Please use TXT files or copy/paste content.');
+        throw new Error('PDF files are not supported yet. Please save your document as a .txt file or copy/paste the text directly.');
       
       case 'doc':
       case 'docx':
-        // For now, return an error message since we can't include Word parsing libraries
-        throw new Error('Word document parsing not implemented yet. Please use TXT files or copy/paste content.');
+        throw new Error('Word documents are not supported yet. Please save your document as a .txt file or copy/paste the text directly.');
       
       default:
-        throw new Error('Unsupported file type. Please use TXT, DOC, DOCX, or PDF files.');
+        throw new Error(`Unsupported file type: .${extension}. Please use .txt files or copy/paste your text directly.`);
     }
   }
 

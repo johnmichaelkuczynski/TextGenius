@@ -19,19 +19,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // File upload endpoint
   app.post("/api/upload", upload.single('file'), async (req: Request & { file?: Express.Multer.File }, res) => {
     try {
+      console.log('Upload request received:', {
+        hasFile: !!req.file,
+        filename: req.file?.originalname,
+        mimetype: req.file?.mimetype,
+        size: req.file?.size
+      });
+
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
+      const extension = req.file.originalname.toLowerCase().split('.').pop();
+      console.log('File extension:', extension);
+
       if (!FileParser.validateFileType(req.file.originalname)) {
         return res.status(400).json({ 
-          message: "Unsupported file type. Please use TXT, DOC, DOCX, or PDF files." 
+          message: `Unsupported file type: .${extension}. Please use TXT files or copy/paste your text directly.` 
         });
       }
 
       const text = await FileParser.parseFile(req.file.buffer, req.file.originalname);
+      
+      if (!text || text.trim().length === 0) {
+        return res.status(400).json({ 
+          message: "File appears to be empty or could not be read." 
+        });
+      }
+
       const wordCount = TextProcessor.countWords(text);
       const chunkCount = TextProcessor.calculateChunkCount(text);
+
+      console.log('File processed successfully:', {
+        filename: req.file.originalname,
+        wordCount,
+        chunkCount,
+        textLength: text.length
+      });
 
       res.json({
         text,
@@ -40,7 +64,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filename: req.file.originalname
       });
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error('File upload error:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        filename: req.file?.originalname
+      });
+      
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to process file" 
       });

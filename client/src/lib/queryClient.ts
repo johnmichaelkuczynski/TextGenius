@@ -12,12 +12,23 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const config: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-  });
+  };
+
+  // Handle FormData (file uploads) differently than JSON
+  if (data instanceof FormData) {
+    config.body = data;
+    // Don't set Content-Type for FormData - browser will set it with boundary
+  } else if (data) {
+    config.headers = { "Content-Type": "application/json" };
+    config.body = JSON.stringify(data);
+  } else {
+    config.headers = {};
+  }
+
+  const res = await fetch(url, config);
 
   await throwIfResNotOk(res);
   return res;
