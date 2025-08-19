@@ -67,23 +67,37 @@ export class LLMClients {
   }
 
   private buildAnalysisPrompt(text: string, question: string, phase: number = 1, previousScore?: number): string {
-    const baseInstruction = `CRITICAL SCORING CALIBRATION: A score of N/100 means that (100-N) out of 100 people can do better. So a score of 87/100 means 13 out of 100 people can do better - this should ONLY be used for truly exceptional, world-class writing that surpasses 87% of all people. Most academic texts should score 60-80/100. Only give scores above 90/100 for genuinely revolutionary insights that would impress leading experts in the field.
+    const baseInstruction = `MANDATORY SCORING RULES - NO EXCEPTIONS:
 
-Examples of proper calibration:
-- Score 95-99/100: Revolutionary philosophical breakthroughs, Nobel-level insights
-- Score 85-94/100: Exceptional academic work, publishable in top journals  
-- Score 70-84/100: Good academic writing, graduate/professional level
-- Score 50-69/100: Undergraduate level, competent but not exceptional
-- Score 30-49/100: Basic competence, high school level
-- Score 10-29/100: Poor quality, elementary mistakes
-- Score 0-9/100: Incoherent or completely wrong
+IF you use ANY of these words in your explanation: "coherent," "sophisticated," "solid," "clear," "well-developed," "analytical," "philosophical argument," "hierarchical organization" → SCORE MUST BE 85-95/100
 
-Answer these questions candidly; provide quotes to illustrate your answers; do not default to bureaucratic norms. You are not grading the text; you are answering questions about its quality. Think very carefully about the percentile interpretation before assigning scores. Do not be artificially harsh or lenient - be accurate about what percentage of people could produce better work.`;
+IF you use ANY of these words: "exceptional," "brilliant," "groundbreaking," "revolutionary," "genius" → SCORE MUST BE 95-99/100
+
+IF you identify serious flaws, confusion, or poor reasoning → SCORE CAN BE 50-80/100
+
+ZERO TOLERANCE for contradictions like:
+- "Coherent philosophical argument" + 78/100 ← FORBIDDEN
+- "Sophisticated analysis" + 70/100 ← FORBIDDEN  
+- "Solid analytical thinking" + 75/100 ← FORBIDDEN
+
+Score meanings (percentile):
+- 90/100 = Only 10% of people can do better (top 10%)
+- 85/100 = Only 15% of people can do better (top 15%)
+- 78/100 = 22% of people can do better
+- 70/100 = 30% of people can do better
+
+If you describe work as "coherent" and "sophisticated," then saying 22% of people can do better is ABSURD.`;
 
     if (phase === 1) {
       return `${baseInstruction}
 
-REMEMBER: Your score represents a percentile. If you're praising the text as "sophisticated" or "exceptional", the score should reflect this (85-95+). If you're identifying flaws or mediocrity, the score should be lower (50-75).
+CRITICAL SCORING CHECK: Your qualitative assessment MUST match your numerical score.
+
+- If you describe work as "coherent philosophical argument," "solid analytical thinking," "demonstrates clear hierarchical organization" → Score should be 85-95/100
+- If you describe work as "sophisticated," "exceptional insight," "advanced" → Score should be 90-99/100  
+- If you describe work as "falls short," "mediocre," "basic" → Score should be 50-75/100
+
+DO NOT give scores like 78/100 while simultaneously praising the work as sophisticated and well-developed. That means 22% of people are better, which contradicts your own analysis.
 
 Question to analyze:
 
@@ -110,17 +124,22 @@ ${text}
 
 Provide a thorough analysis with specific examples and quotes from the text. Be precise and detailed in your evaluation.`;
     } else if (phase === 2 && previousScore !== undefined) {
-      return `Your position is that ${100 - previousScore}/100 outperform the author with respect to the cognitive metric defined by the question: that is your position, am I right? And are you sure about that?
+      return `SCORE CONSISTENCY CHECK: You scored this ${previousScore}/100, meaning ${100 - previousScore} out of 100 people outperform the author.
 
-You scored this ${previousScore}/100, meaning ${100 - previousScore}/100 outperform the author. Describe the cognitive superiority of those ${100 - previousScore} people in concrete terms:
+Look at your qualitative analysis. Did you describe the work as:
+- "Coherent philosophical argument"? 
+- "Solid analytical thinking"?
+- "Clear hierarchical organization"?
+- "Sophisticated"?
 
-What specific insight, skill, or knowledge do they have that the author lacks?
-How does this superiority manifest in their work?
-If you cannot articulate this, revise the score.
+If YES to any of these, then a score of ${previousScore}/100 is WRONG. Such descriptions indicate work that should score 85-95/100.
 
-If the text is a sniper shot (high insight, low 'development'), ask:
-'Is the lack of 'development' a flaw, or is the point obvious to those who see it?'
-'Does this text need scaffolding, or would that dilute it?'
+You must either:
+1. RAISE the score to match your positive assessment (85-95/100), OR
+2. CHANGE your qualitative assessment to justify the low score by identifying serious flaws
+
+What specific insight, skill, or knowledge do those ${100 - previousScore} people have that the author lacks?
+If you cannot articulate concrete superiority, the score is too low.
 
 Answer the following question about the text de novo: "${question}"
 
