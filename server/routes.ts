@@ -363,13 +363,13 @@ Provide a comparative analysis in JSON format:
 }
 
 function calculateOverallScore(doc1Results: any[], doc2Results?: any[]): number {
-  const doc1Score = doc1Results.reduce((sum, r) => sum + r.score, 0) / doc1Results.length;
-  
+  // For dual mode, don't calculate an overall score - comparison should show separate scores
   if (doc2Results) {
-    const doc2Score = doc2Results.reduce((sum, r) => sum + r.score, 0) / doc2Results.length;
-    return Math.round((doc1Score + doc2Score) / 2);
+    return 0; // No overall score for dual mode
   }
   
+  // For single mode, calculate average of all question scores
+  const doc1Score = doc1Results.reduce((sum, r) => sum + r.score, 0) / doc1Results.length;
   return Math.round(doc1Score);
 }
 

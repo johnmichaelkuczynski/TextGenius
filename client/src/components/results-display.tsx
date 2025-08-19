@@ -50,33 +50,64 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
 
           {/* Summary Card */}
           <div className="bg-gradient-to-r from-primary-50 to-purple-50 rounded-xl p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-600" data-testid="overall-score">
-                  {results.overallScore}
+            {results.document2Results ? (
+              // Dual mode - show separate scores, no overall
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600" data-testid="doc1-score">
+                    {Math.round(results.results.reduce((sum, r) => sum + r.score, 0) / results.results.length)}
+                  </div>
+                  <div className="text-sm text-gray-600">Document 1</div>
                 </div>
-                <div className="text-sm text-gray-600">Overall Score</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">Analysis</div>
-                <div className="text-sm text-gray-600">Type</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">LLM</div>
-                <div className="text-sm text-gray-600">Provider</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900" data-testid="processing-time">
-                  {formatTime(results.processingTime)}
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600" data-testid="doc2-score">
+                    {Math.round(results.document2Results.reduce((sum, r) => sum + r.score, 0) / results.document2Results.length)}
+                  </div>
+                  <div className="text-sm text-gray-600">Document 2</div>
                 </div>
-                <div className="text-sm text-gray-600">Processing Time</div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Comparison</div>
+                  <div className="text-sm text-gray-600">Analysis</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900" data-testid="processing-time">
+                    {formatTime(results.processingTime)}
+                  </div>
+                  <div className="text-sm text-gray-600">Processing Time</div>
+                </div>
               </div>
-            </div>
+            ) : (
+              // Single mode - show overall score
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary-600" data-testid="overall-score">
+                    {results.overallScore}
+                  </div>
+                  <div className="text-sm text-gray-600">Overall Score</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Single</div>
+                  <div className="text-sm text-gray-600">Document</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Analysis</div>
+                  <div className="text-sm text-gray-600">Complete</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900" data-testid="processing-time">
+                    {formatTime(results.processingTime)}
+                  </div>
+                  <div className="text-sm text-gray-600">Processing Time</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Document 1 Results */}
           <div className="space-y-6">
-            <h4 className="text-xl font-semibold text-gray-900">Document Analysis</h4>
+            <h4 className="text-xl font-semibold text-gray-900">
+              {results.document2Results ? 'Document 1 Analysis' : 'Document Analysis'}
+            </h4>
             {results.results.map((result, index) => (
               <Card key={index} className="border border-gray-200">
                 <CardContent className="p-6">
