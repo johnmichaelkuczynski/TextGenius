@@ -27,6 +27,18 @@ The Originality Meter is a sophisticated text analysis application that evaluate
 - Added visual chunk previews with expand/collapse functionality
 - Enhanced user control over which document sections get analyzed
 
+✅ **Fixed File Upload Size Limits (413 Error Resolution)**
+- Increased Express payload limits to 50MB for large documents
+- Updated Multer file upload limits to handle substantial academic papers
+- Resolved "PayloadTooLargeError" that was blocking file uploads
+- System now successfully processes multi-chunk documents
+
+✅ **Dual Mode Scoring Logic Fixed**
+- Removed meaningless "overall score" in document comparison mode
+- Displays separate scores for Document 1 vs Document 2 instead of averaging
+- Updated UI to show side-by-side comparison scores
+- Single document mode continues to show overall score as expected
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
