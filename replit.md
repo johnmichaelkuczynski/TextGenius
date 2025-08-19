@@ -14,11 +14,18 @@ The Originality Meter is a sophisticated text analysis application that evaluate
 - User can now upload academic papers in Word format
 
 ✅ **Scoring Calibration Major Update**
-- Fixed critical issue: LLM was giving "glowing comments" but scores of 87/100
-- Updated scoring prompts to emphasize percentile interpretation
-- Added explicit calibration: N/100 score means (100-N)% of people do better
+- Fixed critical issue: LLM was giving "glowing comments" but scores of 78/100
+- Recalibrated scoring: Academic philosophical texts with coherent arguments should score 85-95/100
+- Updated prompts to correctly score based on quality, not arbitrary deflation
 - Enhanced JSON parsing with fallback handling for robustness
 - Improved error handling for analysis pipeline
+
+✅ **Comprehensive Chunk Selection System**
+- Implemented ChunkSelector component with preview and selection interface
+- Users can now select specific parts of large documents for analysis
+- Updated backend to process only selected chunks, saving time and costs
+- Added visual chunk previews with expand/collapse functionality
+- Enhanced user control over which document sections get analyzed
 
 ## User Preferences
 

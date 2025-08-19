@@ -67,37 +67,22 @@ export class LLMClients {
   }
 
   private buildAnalysisPrompt(text: string, question: string, phase: number = 1, previousScore?: number): string {
-    const baseInstruction = `MANDATORY SCORING RULES - NO EXCEPTIONS:
+    const baseInstruction = `SCORING RECALIBRATION: Most academic philosophical texts that show coherent reasoning, clear arguments, and systematic development should score 85-95/100. Only score below 80/100 if there are serious logical flaws, confusion, or poor reasoning.
 
-IF you use ANY of these words in your explanation: "coherent," "sophisticated," "solid," "clear," "well-developed," "analytical," "philosophical argument," "hierarchical organization" → SCORE MUST BE 85-95/100
+Score of N/100 means (100-N)% of people can do better:
+- 95/100 = Only 5% can do better (top 5% - revolutionary insights)
+- 90/100 = Only 10% can do better (top 10% - excellent academic work)
+- 85/100 = Only 15% can do better (top 15% - solid philosophical analysis)
+- 80/100 = Only 20% can do better (competent academic work)
+- 75/100 = 25% can do better (decent but not exceptional)
+- 70/100 = 30% can do better (mediocre)
 
-IF you use ANY of these words: "exceptional," "brilliant," "groundbreaking," "revolutionary," "genius" → SCORE MUST BE 95-99/100
-
-IF you identify serious flaws, confusion, or poor reasoning → SCORE CAN BE 50-80/100
-
-ZERO TOLERANCE for contradictions like:
-- "Coherent philosophical argument" + 78/100 ← FORBIDDEN
-- "Sophisticated analysis" + 70/100 ← FORBIDDEN  
-- "Solid analytical thinking" + 75/100 ← FORBIDDEN
-
-Score meanings (percentile):
-- 90/100 = Only 10% of people can do better (top 10%)
-- 85/100 = Only 15% of people can do better (top 15%)
-- 78/100 = 22% of people can do better
-- 70/100 = 30% of people can do better
-
-If you describe work as "coherent" and "sophisticated," then saying 22% of people can do better is ABSURD.`;
+For philosophical texts with coherent arguments and clear development, the appropriate range is 85-95/100. Lower scores should only be given for texts with genuine weaknesses in reasoning or clarity.`;
 
     if (phase === 1) {
       return `${baseInstruction}
 
-CRITICAL SCORING CHECK: Your qualitative assessment MUST match your numerical score.
-
-- If you describe work as "coherent philosophical argument," "solid analytical thinking," "demonstrates clear hierarchical organization" → Score should be 85-95/100
-- If you describe work as "sophisticated," "exceptional insight," "advanced" → Score should be 90-99/100  
-- If you describe work as "falls short," "mediocre," "basic" → Score should be 50-75/100
-
-DO NOT give scores like 78/100 while simultaneously praising the work as sophisticated and well-developed. That means 22% of people are better, which contradicts your own analysis.
+SCORING INSTRUCTION: Academic philosophical texts with clear reasoning and coherent arguments typically score 85-95/100. This reflects that only 5-15% of people could produce work of equivalent quality. Reserve scores below 80/100 for texts with genuine logical problems or unclear reasoning.
 
 Question to analyze:
 
@@ -124,22 +109,10 @@ ${text}
 
 Provide a thorough analysis with specific examples and quotes from the text. Be precise and detailed in your evaluation.`;
     } else if (phase === 2 && previousScore !== undefined) {
-      return `SCORE CONSISTENCY CHECK: You scored this ${previousScore}/100, meaning ${100 - previousScore} out of 100 people outperform the author.
+      return `RECALIBRATION CHECK: You scored this ${previousScore}/100. For philosophical work with coherent arguments and clear reasoning, scores typically range 85-95/100. If you scored below 85/100, identify the specific logical flaws or reasoning problems that justify this.
 
-Look at your qualitative analysis. Did you describe the work as:
-- "Coherent philosophical argument"? 
-- "Solid analytical thinking"?
-- "Clear hierarchical organization"?
-- "Sophisticated"?
-
-If YES to any of these, then a score of ${previousScore}/100 is WRONG. Such descriptions indicate work that should score 85-95/100.
-
-You must either:
-1. RAISE the score to match your positive assessment (85-95/100), OR
-2. CHANGE your qualitative assessment to justify the low score by identifying serious flaws
-
-What specific insight, skill, or knowledge do those ${100 - previousScore} people have that the author lacks?
-If you cannot articulate concrete superiority, the score is too low.
+What specific deficiencies prevent this from being in the top 15% of philosophical writing?
+If the work demonstrates coherent reasoning and clear argumentation, the score should be 85-95/100.
 
 Answer the following question about the text de novo: "${question}"
 
