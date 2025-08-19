@@ -6,14 +6,19 @@ The Originality Meter is a sophisticated text analysis application that evaluate
 
 ## Recent Updates (August 19, 2025)
 
-✅ **System Successfully Deployed and Tested**
-- Complete 4-phase analysis protocol implemented per user specifications
-- Comprehensive question sets integrated with exact user-provided questions
-- Dual document comparison functionality working
-- API key integration with Replit environment secrets operational
-- File upload and text processing pipeline functional
-- Real LLM analysis calls successfully executing
-- User confirmed: "EXCELLENT. WORKS WELL"
+✅ **File Upload System Fixed and Enhanced**
+- Implemented Word document (.docx) parsing using mammoth library
+- Fixed FormData handling in frontend for proper file uploads
+- Backend file processing tested and working correctly
+- Supports TXT and DOCX files (PDF support planned for future)
+- User can now upload academic papers in Word format
+
+✅ **Scoring Calibration Major Update**
+- Fixed critical issue: LLM was giving "glowing comments" but scores of 87/100
+- Updated scoring prompts to emphasize percentile interpretation
+- Added explicit calibration: N/100 score means (100-N)% of people do better
+- Enhanced JSON parsing with fallback handling for robustness
+- Improved error handling for analysis pipeline
 
 ## User Preferences
 

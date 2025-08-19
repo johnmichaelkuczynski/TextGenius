@@ -319,11 +319,27 @@ Provide a comparative analysis in JSON format:
 
   try {
     const result = await llmClient.analyzeText(provider, comparisonPrompt, 'Provide a comparative analysis', apiKeys);
-    return JSON.parse(result.explanation);
+    
+    // Try to parse the explanation as JSON first
+    let comparisonResult;
+    try {
+      comparisonResult = JSON.parse(result.explanation);
+    } catch {
+      // If that fails, create a structured response
+      comparisonResult = {
+        explanation: result.explanation,
+        scores: {
+          document1: calculateOverallScore(doc1Results),
+          document2: calculateOverallScore(doc2Results)
+        }
+      };
+    }
+    
+    return comparisonResult;
   } catch (error) {
     console.error('Comparison generation error:', error);
     return {
-      explanation: 'Unable to generate comparison due to processing error.',
+      explanation: 'Unable to generate detailed comparison due to processing error. Both documents have been analyzed individually.',
       scores: {
         document1: calculateOverallScore(doc1Results),
         document2: calculateOverallScore(doc2Results)
