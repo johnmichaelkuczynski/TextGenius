@@ -164,13 +164,13 @@ async function processAnalysisAsync(
     
     if (request.evaluationParam === 'complete') {
       // Complete analysis - run all 4 parameters
-      const parameters = ['originality', 'intelligence', 'cogency', 'quality'] as const;
+      const parameters = ['intelligence', 'cogency', 'quality', 'originality'] as const;
       
       for (const param of parameters) {
         console.log(`Processing complete analysis - ${param} parameter...`);
         
         // Add 10-second pause between parameters to prevent token rate limiting
-        if (param !== 'originality') {
+        if (param !== 'intelligence') {
           console.log('Pausing 10 seconds to avoid token rate limits...');
           await TextProcessor.delay(10);
         }

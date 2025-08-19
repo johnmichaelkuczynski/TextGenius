@@ -13,8 +13,9 @@ The Originality Meter is a sophisticated text analysis application that evaluate
 - **Full Integration**: All four LLM providers (Anthropic, OpenAI, Perplexity, DeepSeek) now operational
 
 ✅ **Performance Optimization - Quick Complete Analysis Fixed**
-- **Timing Issue Resolved**: Fixed 30+ minute processing time down to expected 2-3 minutes
+- **Parameter Order Changed**: Fixed stuck analysis by changing order from Originality→Intelligence→Cogency→Quality to **Intelligence→Cogency→Quality→Originality**
 - **Token Rate Limiting**: Added strategic 10-second pauses between parameters and every 5 questions to prevent API rate limit issues
+- **Timing Issue Resolved**: Fixed 30+ minute processing time down to expected 2-3 minutes
 - **Intelligent Delays**: Reduced inter-chunk delays from 10 seconds to 1 second for quick analysis (3 seconds for comprehensive)
 - **Mode-Specific Processing**: Different delay strategies for quick vs comprehensive analysis
 - **Expected Performance**: Quick Complete now ~2-3 minutes, Comprehensive Complete ~15-20 minutes
