@@ -169,6 +169,12 @@ async function processAnalysisAsync(
       for (const param of parameters) {
         console.log(`Processing complete analysis - ${param} parameter...`);
         
+        // Add 10-second pause between parameters to prevent token rate limiting
+        if (param !== 'originality') {
+          console.log('Pausing 10 seconds to avoid token rate limits...');
+          await TextProcessor.delay(10);
+        }
+        
         if (request.analysisMode === 'quick') {
           // Quick complete - single phase for each parameter
           const questions = getQuestions(param, 'quick');
@@ -197,6 +203,13 @@ async function processAnalysisAsync(
           // Comprehensive complete - 4 phases for each parameter
           for (let phase = 1; phase <= 4; phase++) {
             console.log(`Processing ${param} parameter - Phase ${phase}/4...`);
+            
+            // Add 5-second pause between phases to prevent token rate limiting
+            if (phase > 1) {
+              console.log('Pausing 5 seconds to avoid token rate limits...');
+              await TextProcessor.delay(5);
+            }
+            
             const questions = getQuestions(param, 'comprehensive', phase);
             
             if (questions.length > 0) {
@@ -299,7 +312,15 @@ async function processDocument(
   const chunks = TextProcessor.chunkText(text);
   const results = [];
 
-  for (const question of questions) {
+  for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+    const question = questions[questionIndex];
+    
+    // Add periodic pauses every 5 questions to prevent token rate limiting
+    if (questionIndex > 0 && questionIndex % 5 === 0) {
+      console.log(`Pausing 10 seconds after processing ${questionIndex} questions to avoid token rate limits...`);
+      await TextProcessor.delay(10);
+    }
+    
     const chunkResults = [];
 
     for (let i = 0; i < chunks.length; i++) {
