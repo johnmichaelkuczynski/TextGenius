@@ -198,16 +198,6 @@ export default function Home() {
     }
   };
 
-  const getTotalQuestionCount = (param: string) => {
-    switch (param) {
-      case 'originality': return 9;
-      case 'intelligence': return 18;
-      case 'cogency': return 12;
-      case 'quality': return 19;
-      default: return 9;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -297,9 +287,9 @@ export default function Home() {
         <ProgressTracker
           isVisible={isAnalyzing}
           currentStep={1}
-          totalSteps={getTotalQuestionCount(config.evaluationParam)}
+          totalSteps={4}
           currentPhase="Processing Document - Analyzing text..."
-          currentAction={`Evaluating ${config.evaluationParam} questions...`}
+          currentAction="Evaluating originality questions..."
           showPhaseDetails={config.analysisMode === 'comprehensive'}
           onCancel={() => setIsAnalyzing(false)}
         />

@@ -76,9 +76,8 @@ export function getQuestions(parameter: string, mode: 'quick' | 'comprehensive',
   const questions = questionSets[parameter as keyof typeof questionSets] || questionSets.originality;
   
   if (mode === 'quick') {
-    // CRITICAL: Quick mode MUST use ALL questions as per user specifications
-    // Only difference is skipping phases 2-4, NOT reducing questions
-    return questions;
+    // Return first 3 questions for quick mode (Phase 1 only)
+    return questions.slice(0, 3);
   }
   
   // For comprehensive mode, return questions based on phase
