@@ -6,6 +6,12 @@ The Originality Meter is a sophisticated text analysis application that evaluate
 
 ## Recent Updates (August 19, 2025)
 
+✅ **Perplexity API Integration Fixed**
+- **Model Update**: Updated from deprecated `llama-3.1-sonar-small-128k-online` to current `sonar-pro` model
+- **API Key Handling**: Fixed environment variable fallback for Perplexity API key access
+- **Error Resolution**: Resolved "API key not provided" and "Invalid model" errors
+- **Full Integration**: All four LLM providers (Anthropic, OpenAI, Perplexity, DeepSeek) now operational
+
 ✅ **Complete Analysis Modes Added**
 - **Quick Complete Analysis**: Runs all 4 parameters (originality, intelligence, cogency, quality) in quick mode with single button click
 - **Comprehensive Complete Analysis**: Runs full 4-phase protocol for all 4 parameters with single button click  

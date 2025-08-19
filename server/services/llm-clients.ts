@@ -29,18 +29,30 @@ export class LLMClients {
     perplexity?: string;
     deepseek?: string;
   }) {
-    if (apiKeys.anthropic) {
+    // Merge provided API keys with environment variables as fallbacks
+    this.apiKeys = {
+      anthropic: apiKeys?.anthropic || process.env.ANTHROPIC_API_KEY,
+      openai: apiKeys?.openai || process.env.OPENAI_API_KEY, 
+      perplexity: apiKeys?.perplexity || process.env.PERPLEXITY_API_KEY,
+      deepseek: apiKeys?.deepseek // DeepSeek doesn't have env fallback currently
+    };
+
+
+
+    if (this.apiKeys.anthropic) {
       this.anthropic = new Anthropic({
-        apiKey: apiKeys.anthropic,
+        apiKey: this.apiKeys.anthropic,
       });
     }
 
-    if (apiKeys.openai) {
+    if (this.apiKeys.openai) {
       this.openai = new OpenAI({
-        apiKey: apiKeys.openai,
+        apiKey: this.apiKeys.openai,
       });
     }
   }
+
+  private apiKeys: any;
 
   async analyzeText(
     provider: string,
@@ -54,13 +66,13 @@ export class LLMClients {
 
     switch (provider) {
       case 'anthropic':
-        return this.callAnthropic(prompt, apiKeys.anthropic);
+        return this.callAnthropic(prompt, this.apiKeys.anthropic);
       case 'openai':
-        return this.callOpenAI(prompt, apiKeys.openai);
+        return this.callOpenAI(prompt, this.apiKeys.openai);
       case 'perplexity':
-        return this.callPerplexity(prompt, apiKeys.perplexity);
+        return this.callPerplexity(prompt, this.apiKeys.perplexity);
       case 'deepseek':
-        return this.callDeepSeek(prompt, apiKeys.deepseek);
+        return this.callDeepSeek(prompt, this.apiKeys.deepseek);
       default:
         throw new Error(`Unsupported LLM provider: ${provider}`);
     }
@@ -218,50 +230,63 @@ ${text}`;
   }
 
   private async callPerplexity(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
+    // Use stored API key if not provided in request
+    const effectiveApiKey = apiKey || this.apiKeys?.perplexity;
+    
+    if (!effectiveApiKey) {
       throw new Error('Perplexity API key not provided');
     }
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert text analyst. Respond only with valid JSON in the exact format requested.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.2,
-        stream: false,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-
     try {
-      const parsed = JSON.parse(content);
-      return {
-        score: Math.max(0, Math.min(100, parsed.score)),
-        explanation: parsed.explanation,
-        quotes: Array.isArray(parsed.quotes) ? parsed.quotes : []
-      };
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${effectiveApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'sonar-pro',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert text analyst. Respond only with valid JSON in the exact format: {"score": number, "explanation": string, "quotes": [string]}. The score must be between 0 and 100.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.2,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('Empty response content from Perplexity API');
+      }
+
+      try {
+        const parsed = JSON.parse(content);
+        return {
+          score: Math.max(0, Math.min(100, parseInt(parsed.score) || 0)),
+          explanation: parsed.explanation || 'No explanation provided',
+          quotes: Array.isArray(parsed.quotes) ? parsed.quotes : []
+        };
+      } catch (parseError) {
+        throw new Error(`Failed to parse Perplexity response as JSON: ${parseError}`);
+      }
     } catch (error) {
-      throw new Error('Failed to parse Perplexity response as JSON');
+      throw error;
     }
   }
 
