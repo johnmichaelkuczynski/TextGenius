@@ -163,7 +163,7 @@ ${text}`;
       throw new Error('Anthropic API key not provided');
     }
 
-    const anthropic = new Anthropic({ apiKey });
+    const anthropic = new Anthropic({ apiKey: key });
 
     const response = await anthropic.messages.create({
       model: DEFAULT_ANTHROPIC_MODEL, // "claude-sonnet-4-20250514"
@@ -189,12 +189,14 @@ ${text}`;
   }
 
   private async callOpenAI(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
+    // Use environment API key if user didn't provide one
+    const key = apiKey || process.env.OPENAI_API_KEY;
+    if (!key) {
       throw new Error('OpenAI API key not provided');
     }
 
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({ apiKey: key });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -270,14 +272,16 @@ ${text}`;
   }
 
   private async callDeepSeek(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
+    // Use environment API key if user didn't provide one  
+    const key = apiKey || process.env.DEEPSEEK_API_KEY;
+    if (!key) {
       throw new Error('DeepSeek API key not provided');
     }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
