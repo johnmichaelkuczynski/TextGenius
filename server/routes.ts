@@ -344,8 +344,8 @@ Provide a comparative analysis in JSON format:
       comparisonResult = {
         explanation: result.explanation,
         scores: {
-          document1: calculateOverallScore(doc1Results),
-          document2: calculateOverallScore(doc2Results)
+          document1: Math.round(doc1Results.reduce((sum, r) => sum + r.score, 0) / doc1Results.length),
+          document2: Math.round(doc2Results.reduce((sum, r) => sum + r.score, 0) / doc2Results.length)
         }
       };
     }
@@ -353,11 +353,24 @@ Provide a comparative analysis in JSON format:
     return comparisonResult;
   } catch (error) {
     console.error('Comparison generation error:', error);
+    // Generate a basic comparison based on the individual results
+    const doc1Avg = Math.round(doc1Results.reduce((sum, r) => sum + r.score, 0) / doc1Results.length);
+    const doc2Avg = Math.round(doc2Results.reduce((sum, r) => sum + r.score, 0) / doc2Results.length);
+    
+    let comparisonText = `Document 1 averaged ${doc1Avg}/100 across all evaluated criteria. Document 2 averaged ${doc2Avg}/100. `;
+    if (doc1Avg > doc2Avg) {
+      comparisonText += `Document 1 performed stronger overall, scoring ${doc1Avg - doc2Avg} points higher on average.`;
+    } else if (doc2Avg > doc1Avg) {
+      comparisonText += `Document 2 performed stronger overall, scoring ${doc2Avg - doc1Avg} points higher on average.`;
+    } else {
+      comparisonText += `Both documents performed similarly across the evaluated criteria.`;
+    }
+    
     return {
-      explanation: 'Unable to generate detailed comparison due to processing error. Both documents have been analyzed individually.',
+      explanation: comparisonText,
       scores: {
-        document1: calculateOverallScore(doc1Results),
-        document2: calculateOverallScore(doc2Results)
+        document1: doc1Avg,
+        document2: doc2Avg
       }
     };
   }

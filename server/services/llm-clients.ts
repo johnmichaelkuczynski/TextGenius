@@ -275,15 +275,32 @@ ${text}`;
     const data = await response.json();
     const content = data.choices[0].message.content;
 
+    // Try to extract JSON from the response, even if it has extra text
+    let cleanedContent = content.trim();
+    
+    // Look for JSON object markers
+    const jsonStart = cleanedContent.indexOf('{');
+    const jsonEnd = cleanedContent.lastIndexOf('}');
+    
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
+    }
+
     try {
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(cleanedContent);
       return {
-        score: Math.max(0, Math.min(100, parsed.score)),
-        explanation: parsed.explanation,
+        score: Math.max(0, Math.min(100, parsed.score || 0)),
+        explanation: parsed.explanation || 'Unable to generate explanation due to processing errors.',
         quotes: Array.isArray(parsed.quotes) ? parsed.quotes : []
       };
     } catch (error) {
-      throw new Error('Failed to parse Perplexity response as JSON');
+      console.error('Perplexity JSON parsing failed:', { content, cleanedContent, error });
+      // Fallback response instead of throwing error
+      return {
+        score: 0,
+        explanation: 'Unable to generate explanation due to processing errors.',
+        quotes: []
+      };
     }
   }
 
@@ -323,15 +340,32 @@ ${text}`;
     const data = await response.json();
     const content = data.choices[0].message.content;
 
+    // Try to extract JSON from the response, even if it has extra text
+    let cleanedContent = content.trim();
+    
+    // Look for JSON object markers
+    const jsonStart = cleanedContent.indexOf('{');
+    const jsonEnd = cleanedContent.lastIndexOf('}');
+    
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
+    }
+
     try {
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(cleanedContent);
       return {
-        score: Math.max(0, Math.min(100, parsed.score)),
-        explanation: parsed.explanation,
+        score: Math.max(0, Math.min(100, parsed.score || 0)),
+        explanation: parsed.explanation || 'Unable to generate explanation due to processing errors.',
         quotes: Array.isArray(parsed.quotes) ? parsed.quotes : []
       };
     } catch (error) {
-      throw new Error('Failed to parse DeepSeek response as JSON');
+      console.error('DeepSeek JSON parsing failed:', { content, cleanedContent, error });
+      // Fallback response instead of throwing error
+      return {
+        score: 0,
+        explanation: 'Unable to generate explanation due to processing errors.',
+        quotes: []
+      };
     }
   }
 }
