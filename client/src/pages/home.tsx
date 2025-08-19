@@ -15,7 +15,7 @@ import { ApiKeys, AnalysisRequest, AnalysisResult } from '@shared/schema';
 interface AnalysisConfig {
   documentMode: 'single' | 'dual';
   llmProvider: 'anthropic' | 'openai' | 'perplexity' | 'deepseek';
-  evaluationParam: 'originality' | 'intelligence' | 'cogency' | 'quality';
+  evaluationParam: 'originality' | 'intelligence' | 'cogency' | 'quality' | 'complete';
   analysisMode: 'quick' | 'comprehensive';
 }
 

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 interface AnalysisConfig {
   documentMode: 'single' | 'dual';
   llmProvider: 'anthropic' | 'openai' | 'perplexity' | 'deepseek';
-  evaluationParam: 'originality' | 'intelligence' | 'cogency' | 'quality';
+  evaluationParam: 'originality' | 'intelligence' | 'cogency' | 'quality' | 'complete';
   analysisMode: 'quick' | 'comprehensive';
 }
 
@@ -80,6 +80,7 @@ export function AnalysisConfigPanel({ config, onConfigChange }: AnalysisConfigPr
                 <SelectItem value="intelligence">🧠 Intelligence</SelectItem>
                 <SelectItem value="cogency">🎯 Cogency</SelectItem>
                 <SelectItem value="quality">⭐ Overall Quality</SelectItem>
+                <SelectItem value="complete">🎯 Complete Analysis (All 4)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -109,6 +110,28 @@ export function AnalysisConfigPanel({ config, onConfigChange }: AnalysisConfigPr
             </div>
           </div>
         </div>
+        
+        {/* Complete Analysis Description */}
+        {config.evaluationParam === 'complete' && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-2">Complete Analysis Mode</h3>
+            <p className="text-sm text-blue-800">
+              {config.analysisMode === 'quick' ? (
+                <>
+                  <span className="font-medium">Quick Complete Analysis:</span> Runs all 4 evaluation parameters 
+                  (Originality, Intelligence, Cogency, Overall Quality) in quick mode with 3 key questions each.
+                  Total: ~12 questions, estimated time: 2-3 minutes.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium">Comprehensive Complete Analysis:</span> Runs the full 4-phase protocol 
+                  for all 4 evaluation parameters (Originality, Intelligence, Cogency, Overall Quality).
+                  Total: ~100+ questions across 16 phases, estimated time: 15-20 minutes.
+                </>
+              )}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
