@@ -164,16 +164,10 @@ async function processAnalysisAsync(
     
     if (request.evaluationParam === 'complete') {
       // Complete analysis - run all 4 parameters
-      const parameters = ['intelligence', 'cogency', 'quality', 'originality'] as const;
+      const parameters = ['originality', 'intelligence', 'cogency', 'quality'] as const;
       
       for (const param of parameters) {
         console.log(`Processing complete analysis - ${param} parameter...`);
-        
-        // Add 10-second pause between parameters to prevent token rate limiting
-        if (param !== 'intelligence') {
-          console.log('Pausing 10 seconds to avoid token rate limits...');
-          await TextProcessor.delay(10);
-        }
         
         if (request.analysisMode === 'quick') {
           // Quick complete - single phase for each parameter
@@ -183,8 +177,7 @@ async function processAnalysisAsync(
             questions, 
             request.llmProvider, 
             llmClient,
-            apiKeys,
-            'quick'
+            apiKeys
           );
           allResults.push(...doc1Results.map(r => ({ ...r, parameter: param })));
           
@@ -194,8 +187,7 @@ async function processAnalysisAsync(
               questions, 
               request.llmProvider, 
               llmClient,
-              apiKeys,
-              'quick'
+              apiKeys
             );
             allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param })));
           }
@@ -203,13 +195,6 @@ async function processAnalysisAsync(
           // Comprehensive complete - 4 phases for each parameter
           for (let phase = 1; phase <= 4; phase++) {
             console.log(`Processing ${param} parameter - Phase ${phase}/4...`);
-            
-            // Add 5-second pause between phases to prevent token rate limiting
-            if (phase > 1) {
-              console.log('Pausing 5 seconds to avoid token rate limits...');
-              await TextProcessor.delay(5);
-            }
-            
             const questions = getQuestions(param, 'comprehensive', phase);
             
             if (questions.length > 0) {
@@ -218,8 +203,7 @@ async function processAnalysisAsync(
                 questions, 
                 request.llmProvider, 
                 llmClient,
-                apiKeys,
-                'comprehensive'
+                apiKeys
               );
               allResults.push(...doc1Results.map(r => ({ ...r, parameter: param, phase })));
               
@@ -229,8 +213,7 @@ async function processAnalysisAsync(
                   questions, 
                   request.llmProvider, 
                   llmClient,
-                  apiKeys,
-                  'comprehensive'
+                  apiKeys
                 );
                 allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param, phase })));
               }
@@ -248,8 +231,7 @@ async function processAnalysisAsync(
         questions, 
         request.llmProvider, 
         llmClient,
-        apiKeys,
-        request.analysisMode
+        apiKeys
       );
 
       // Process document 2 if dual mode
@@ -259,8 +241,7 @@ async function processAnalysisAsync(
           questions, 
           request.llmProvider, 
           llmClient,
-          apiKeys,
-          request.analysisMode
+          apiKeys
         );
       }
     }
@@ -306,21 +287,12 @@ async function processDocument(
   questions: string[],
   provider: string,
   llmClient: LLMClients,
-  apiKeys: any,
-  analysisMode: string = 'quick'
+  apiKeys: any
 ) {
   const chunks = TextProcessor.chunkText(text);
   const results = [];
 
-  for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
-    const question = questions[questionIndex];
-    
-    // Add periodic pauses every 5 questions to prevent token rate limiting
-    if (questionIndex > 0 && questionIndex % 5 === 0) {
-      console.log(`Pausing 10 seconds after processing ${questionIndex} questions to avoid token rate limits...`);
-      await TextProcessor.delay(10);
-    }
-    
+  for (const question of questions) {
     const chunkResults = [];
 
     for (let i = 0; i < chunks.length; i++) {
@@ -333,10 +305,9 @@ async function processDocument(
           ...result
         });
 
-        // Wait between chunks to avoid rate limiting (shorter for quick analysis)
+        // Wait 10 seconds between chunks as specified
         if (i < chunks.length - 1) {
-          const delay = analysisMode === 'quick' ? 1 : 3;
-          await TextProcessor.delay(delay);
+          await TextProcessor.delay(10);
         }
       } catch (error) {
         console.error(`Error processing chunk ${i} for question "${question}":`, error);

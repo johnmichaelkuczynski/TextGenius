@@ -74,7 +74,7 @@ export const questionSets = {
 
 function getAllParameterQuestions(mode: 'quick' | 'comprehensive', phase?: number): string[] {
   const allQuestions: string[] = [];
-  const parameters = ['intelligence', 'cogency', 'quality', 'originality'] as const;
+  const parameters = ['originality', 'intelligence', 'cogency', 'quality'] as const;
   
   for (const param of parameters) {
     const paramQuestions = getQuestionsForParameter(param, mode, phase);
