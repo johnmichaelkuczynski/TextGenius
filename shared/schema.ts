@@ -37,6 +37,8 @@ export const analysisRequestSchema = z.object({
   analysisMode: z.enum(['quick', 'comprehensive']),
   document1Text: z.string().min(1),
   document2Text: z.string().optional(),
+  selectedChunks1: z.array(z.number()).optional(), // Array of chunk indices to analyze for document 1
+  selectedChunks2: z.array(z.number()).optional(), // Array of chunk indices to analyze for document 2
 });
 
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;

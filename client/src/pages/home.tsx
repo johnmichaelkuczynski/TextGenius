@@ -31,6 +31,8 @@ export default function Home() {
   });
   const [document1Text, setDocument1Text] = useState('');
   const [document2Text, setDocument2Text] = useState('');
+  const [selectedChunks1, setSelectedChunks1] = useState<number[]>([]);
+  const [selectedChunks2, setSelectedChunks2] = useState<number[]>([]);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
@@ -140,6 +142,8 @@ export default function Home() {
       analysisMode: config.analysisMode,
       document1Text,
       document2Text: config.documentMode === 'dual' ? document2Text : undefined,
+      selectedChunks1: selectedChunks1.length > 0 ? selectedChunks1 : undefined,
+      selectedChunks2: config.documentMode === 'dual' && selectedChunks2.length > 0 ? selectedChunks2 : undefined,
       apiKeys,
     };
 
@@ -245,6 +249,8 @@ export default function Home() {
             title={config.documentMode === 'dual' ? 'Document 1' : 'Document'}
             text={document1Text}
             onTextChange={setDocument1Text}
+            selectedChunks={selectedChunks1}
+            onChunksChange={setSelectedChunks1}
             required
             disabled={isAnalyzing}
           />
@@ -254,6 +260,8 @@ export default function Home() {
               title="Document 2"
               text={document2Text}
               onTextChange={setDocument2Text}
+              selectedChunks={selectedChunks2}
+              onChunksChange={setSelectedChunks2}
               required
               disabled={isAnalyzing}
             />

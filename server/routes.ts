@@ -166,7 +166,8 @@ async function processAnalysisAsync(
       questions, 
       request.llmProvider, 
       llmClient,
-      apiKeys
+      apiKeys,
+      request.selectedChunks1
     );
 
     let doc2Results = undefined;
@@ -179,7 +180,8 @@ async function processAnalysisAsync(
         questions, 
         request.llmProvider, 
         llmClient,
-        apiKeys
+        apiKeys,
+        request.selectedChunks2
       );
 
       // Generate comparison
@@ -220,32 +222,44 @@ async function processDocument(
   questions: string[],
   provider: string,
   llmClient: LLMClients,
-  apiKeys: any
+  apiKeys: any,
+  selectedChunks?: number[]
 ) {
-  const chunks = TextProcessor.chunkText(text);
+  const allChunks = TextProcessor.chunkText(text);
+  
+  // If specific chunks are selected, only process those
+  const chunksToProcess = selectedChunks && selectedChunks.length > 0 
+    ? allChunks.filter(chunk => selectedChunks.includes(chunk.index))
+    : allChunks;
+
+  console.log(`Processing ${chunksToProcess.length} chunks out of ${allChunks.length} total chunks`);
+  if (selectedChunks && selectedChunks.length > 0) {
+    console.log(`Selected chunk indices: ${selectedChunks.join(', ')}`);
+  }
+
   const results = [];
 
   for (const question of questions) {
     const chunkResults = [];
 
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
+    for (let i = 0; i < chunksToProcess.length; i++) {
+      const chunk = chunksToProcess[i];
       
       try {
         const result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys);
         chunkResults.push({
-          chunkIndex: i,
+          chunkIndex: chunk.index, // Use original chunk index
           ...result
         });
 
         // Wait 10 seconds between chunks as specified
-        if (i < chunks.length - 1) {
+        if (i < chunksToProcess.length - 1) {
           await TextProcessor.delay(10);
         }
       } catch (error) {
-        console.error(`Error processing chunk ${i} for question "${question}":`, error);
+        console.error(`Error processing chunk ${chunk.index} for question "${question}":`, error);
         chunkResults.push({
-          chunkIndex: i,
+          chunkIndex: chunk.index,
           score: 0,
           explanation: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           quotes: []

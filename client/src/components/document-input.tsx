@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileUpload } from '@/components/ui/file-upload';
+import { ChunkSelector } from '@/components/chunk-selector';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,11 +9,13 @@ interface DocumentInputProps {
   title: string;
   text: string;
   onTextChange: (text: string) => void;
+  selectedChunks: number[];
+  onChunksChange: (chunks: number[]) => void;
   required?: boolean;
   disabled?: boolean;
 }
 
-export function DocumentInput({ title, text, onTextChange, required, disabled }: DocumentInputProps) {
+export function DocumentInput({ title, text, onTextChange, selectedChunks, onChunksChange, required, disabled }: DocumentInputProps) {
   const { toast } = useToast();
 
   const handleFileSelect = async (file: File) => {
@@ -67,6 +70,14 @@ export function DocumentInput({ title, text, onTextChange, required, disabled }:
             </span>
           )}
         </div>
+        
+        <ChunkSelector
+          text={text}
+          selectedChunks={selectedChunks}
+          onChunksChange={onChunksChange}
+          title={title}
+          disabled={disabled}
+        />
       </CardContent>
     </Card>
   );
