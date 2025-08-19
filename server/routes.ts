@@ -158,103 +158,36 @@ async function processAnalysisAsync(
   
   try {
     const llmClient = new LLMClients(apiKeys);
-    
-    let allResults: any[] = [];
-    let allDoc2Results: any[] = [];
-    
-    if (request.evaluationParam === 'complete') {
-      // Complete analysis - run all 4 parameters
-      const parameters = ['originality', 'intelligence', 'cogency', 'quality'] as const;
-      
-      for (const param of parameters) {
-        console.log(`Processing complete analysis - ${param} parameter...`);
-        
-        if (request.analysisMode === 'quick') {
-          // Quick complete - single phase for each parameter
-          const questions = getQuestions(param, 'quick');
-          const doc1Results = await processDocument(
-            request.document1Text, 
-            questions, 
-            request.llmProvider, 
-            llmClient,
-            apiKeys
-          );
-          allResults.push(...doc1Results.map(r => ({ ...r, parameter: param })));
-          
-          if (request.documentMode === 'dual' && request.document2Text) {
-            const doc2Results = await processDocument(
-              request.document2Text, 
-              questions, 
-              request.llmProvider, 
-              llmClient,
-              apiKeys
-            );
-            allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param })));
-          }
-        } else {
-          // Comprehensive complete - 4 phases for each parameter
-          for (let phase = 1; phase <= 4; phase++) {
-            console.log(`Processing ${param} parameter - Phase ${phase}/4...`);
-            const questions = getQuestions(param, 'comprehensive', phase);
-            
-            if (questions.length > 0) {
-              const doc1Results = await processDocument(
-                request.document1Text, 
-                questions, 
-                request.llmProvider, 
-                llmClient,
-                apiKeys
-              );
-              allResults.push(...doc1Results.map(r => ({ ...r, parameter: param, phase })));
-              
-              if (request.documentMode === 'dual' && request.document2Text) {
-                const doc2Results = await processDocument(
-                  request.document2Text, 
-                  questions, 
-                  request.llmProvider, 
-                  llmClient,
-                  apiKeys
-                );
-                allDoc2Results.push(...doc2Results.map(r => ({ ...r, parameter: param, phase })));
-              }
-            }
-          }
-        }
-      }
-    } else {
-      // Single parameter analysis (existing logic)
-      const questions = getQuestions(request.evaluationParam, request.analysisMode);
+    const questions = getQuestions(request.evaluationParam, request.analysisMode);
 
-      // Process document 1
-      allResults = await processDocument(
-        request.document1Text, 
+    // Process document 1
+    const doc1Results = await processDocument(
+      request.document1Text, 
+      questions, 
+      request.llmProvider, 
+      llmClient,
+      apiKeys
+    );
+
+    let doc2Results = undefined;
+    let comparisonResults = undefined;
+
+    // Process document 2 if dual mode
+    if (request.documentMode === 'dual' && request.document2Text) {
+      doc2Results = await processDocument(
+        request.document2Text, 
         questions, 
         request.llmProvider, 
         llmClient,
         apiKeys
       );
 
-      // Process document 2 if dual mode
-      if (request.documentMode === 'dual' && request.document2Text) {
-        allDoc2Results = await processDocument(
-          request.document2Text, 
-          questions, 
-          request.llmProvider, 
-          llmClient,
-          apiKeys
-        );
-      }
-    }
-
-    let comparisonResults = undefined;
-    
-    // Generate comparison for dual mode
-    if (request.documentMode === 'dual' && request.document2Text && allDoc2Results.length > 0) {
+      // Generate comparison
       comparisonResults = await generateComparison(
         request.document1Text,
         request.document2Text,
-        allResults,
-        allDoc2Results,
+        doc1Results,
+        doc2Results,
         request.evaluationParam,
         request.llmProvider,
         llmClient,
@@ -263,13 +196,13 @@ async function processAnalysisAsync(
     }
 
     // Calculate overall score
-    const overallScore = calculateOverallScore(allResults, allDoc2Results);
+    const overallScore = calculateOverallScore(doc1Results, doc2Results);
     const processingTime = Math.round((Date.now() - startTime) / 1000);
 
     // Update analysis with results
     await storage.updateAnalysisResults(analysisId, {
-      results: allResults,
-      document2Results: allDoc2Results.length > 0 ? allDoc2Results : undefined,
+      results: doc1Results,
+      document2Results: doc2Results,
       comparisonResults
     }, overallScore, processingTime);
 

@@ -7,7 +7,7 @@ export const analyses = pgTable("analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   documentMode: text("document_mode").notNull(), // 'single' | 'dual'
   llmProvider: text("llm_provider").notNull(), // 'anthropic' | 'openai' | 'perplexity' | 'deepseek'
-  evaluationParam: text("evaluation_param").notNull(), // 'originality' | 'intelligence' | 'cogency' | 'quality' | 'complete'
+  evaluationParam: text("evaluation_param").notNull(), // 'originality' | 'intelligence' | 'cogency' | 'quality'
   analysisMode: text("analysis_mode").notNull(), // 'quick' | 'comprehensive'
   document1Text: text("document1_text").notNull(),
   document2Text: text("document2_text"),
@@ -33,7 +33,7 @@ export type Analysis = typeof analyses.$inferSelect;
 export const analysisRequestSchema = z.object({
   documentMode: z.enum(['single', 'dual']),
   llmProvider: z.enum(['anthropic', 'openai', 'perplexity', 'deepseek']),
-  evaluationParam: z.enum(['originality', 'intelligence', 'cogency', 'quality', 'complete']),
+  evaluationParam: z.enum(['originality', 'intelligence', 'cogency', 'quality']),
   analysisMode: z.enum(['quick', 'comprehensive']),
   document1Text: z.string().min(1),
   document2Text: z.string().optional(),

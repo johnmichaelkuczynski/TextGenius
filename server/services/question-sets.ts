@@ -72,44 +72,23 @@ export const questionSets = {
   ]
 };
 
-function getAllParameterQuestions(mode: 'quick' | 'comprehensive', phase?: number): string[] {
-  const allQuestions: string[] = [];
-  const parameters = ['originality', 'intelligence', 'cogency', 'quality'] as const;
-  
-  for (const param of parameters) {
-    const paramQuestions = getQuestionsForParameter(param, mode, phase);
-    allQuestions.push(...paramQuestions);
-  }
-  
-  return allQuestions;
-}
-
-function getQuestionsForParameter(parameter: string, mode: 'quick' | 'comprehensive', phase?: number): string[] {
+export function getQuestions(parameter: string, mode: 'quick' | 'comprehensive', phase?: number): string[] {
   const questions = questionSets[parameter as keyof typeof questionSets] || questionSets.originality;
   
   if (mode === 'quick') {
-    // Return first 3 questions for quick mode
+    // Return first 3 questions for quick mode (Phase 1 only)
     return questions.slice(0, 3);
-  } else {
-    // Comprehensive mode - 4-phase analysis
-    if (phase === undefined) {
-      // Return all questions if no specific phase requested
-      return questions;
-    }
-    
-    const questionsPerPhase = Math.ceil(questions.length / 4);
-    const startIndex = (phase - 1) * questionsPerPhase;
-    const endIndex = Math.min(startIndex + questionsPerPhase, questions.length);
-    
-    return questions.slice(startIndex, endIndex);
-  }
-}
-
-export function getQuestions(parameter: string, mode: 'quick' | 'comprehensive', phase?: number): string[] {
-  // Handle complete analysis - return questions for all parameters
-  if (parameter === 'complete') {
-    return getAllParameterQuestions(mode, phase);
   }
   
-  return getQuestionsForParameter(parameter, mode, phase);
+  // For comprehensive mode, return questions based on phase
+  if (phase === 1) {
+    // Phase 1: First 5 questions
+    return questions.slice(0, 5);
+  } else if (phase === 2) {
+    // Phase 2: All questions for pushback
+    return questions;
+  }
+  
+  // Return all questions by default
+  return questions;
 }
