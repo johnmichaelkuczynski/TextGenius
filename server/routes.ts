@@ -166,8 +166,7 @@ async function processAnalysisAsync(
       questions, 
       request.llmProvider, 
       llmClient,
-      apiKeys,
-      request.analysisMode
+      apiKeys
     );
 
     let doc2Results = undefined;
@@ -180,8 +179,7 @@ async function processAnalysisAsync(
         questions, 
         request.llmProvider, 
         llmClient,
-        apiKeys,
-        request.analysisMode
+        apiKeys
       );
 
       // Generate comparison
@@ -222,96 +220,45 @@ async function processDocument(
   questions: string[],
   provider: string,
   llmClient: LLMClients,
-  apiKeys: any,
-  analysisMode: 'quick' | 'comprehensive' = 'quick'
+  apiKeys: any
 ) {
   const chunks = TextProcessor.chunkText(text);
   const results = [];
 
   for (const question of questions) {
-    // Process each question through all required phases
-    let questionResult;
-    
-    if (analysisMode === 'comprehensive') {
-      // 4-phase comprehensive analysis
-      questionResult = await processQuestionComprehensive(chunks, question, provider, llmClient, apiKeys);
-    } else {
-      // Quick mode - Phase 1 only
-      questionResult = await processQuestionQuick(chunks, question, provider, llmClient, apiKeys);
+    const chunkResults = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      try {
+        const result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys);
+        chunkResults.push({
+          chunkIndex: i,
+          ...result
+        });
+
+        // Wait 10 seconds between chunks as specified
+        if (i < chunks.length - 1) {
+          await TextProcessor.delay(10);
+        }
+      } catch (error) {
+        console.error(`Error processing chunk ${i} for question "${question}":`, error);
+        chunkResults.push({
+          chunkIndex: i,
+          score: 0,
+          explanation: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          quotes: []
+        });
+      }
     }
-    
-    results.push(questionResult);
+
+    // Amalgamate results for this question
+    const amalgamatedResult = amalgamateChunkResults(question, chunkResults);
+    results.push(amalgamatedResult);
   }
 
   return results;
-}
-
-async function processQuestionQuick(chunks: any[], question: string, provider: string, llmClient: LLMClients, apiKeys: any) {
-  const chunkResults = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    
-    try {
-      // Phase 1 only for quick mode
-      const result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys, 1);
-      chunkResults.push({
-        chunkIndex: i,
-        ...result
-      });
-
-      // Wait 10 seconds between chunks as specified
-      if (i < chunks.length - 1) {
-        await TextProcessor.delay(10);
-      }
-    } catch (error) {
-      console.error(`Error processing chunk ${i} for question "${question}":`, error);
-      throw new Error(`Analysis failed for ${provider}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  return amalgamateChunkResults(question, chunkResults);
-}
-
-async function processQuestionComprehensive(chunks: any[], question: string, provider: string, llmClient: LLMClients, apiKeys: any) {
-  const chunkResults = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    let chunkResult;
-    
-    try {
-      // Phase 1
-      let phase1Result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys, 1);
-      
-      // Phase 2 - Push back if score < 95
-      let phase2Result = phase1Result;
-      if (phase1Result.score < 95) {
-        phase2Result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys, 2, phase1Result.score);
-      }
-      
-      // Phase 3 - Walmart metric enforcement
-      let phase3Result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys, 3, phase2Result.score);
-      
-      // Phase 4 - Final validation
-      chunkResult = await llmClient.analyzeText(provider, chunk.text, question, apiKeys, 4, phase3Result.score);
-      
-      chunkResults.push({
-        chunkIndex: i,
-        ...chunkResult
-      });
-
-      // Wait 10 seconds between chunks as specified
-      if (i < chunks.length - 1) {
-        await TextProcessor.delay(10);
-      }
-    } catch (error) {
-      console.error(`Error processing chunk ${i} for question "${question}":`, error);
-      throw new Error(`Analysis failed for ${provider}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  return amalgamateChunkResults(question, chunkResults);
 }
 
 function amalgamateChunkResults(question: string, chunkResults: any[]) {
@@ -321,7 +268,7 @@ function amalgamateChunkResults(question: string, chunkResults: any[]) {
     ? Math.round(validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length)
     : 0;
 
-  // Combine explanations without filtering/modifying/censoring per instructions
+  // Combine explanations
   const explanations = chunkResults
     .filter(r => r.explanation && !r.explanation.startsWith('Error:'))
     .map(r => r.explanation);
