@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!FileParser.validateFileType(req.file.originalname)) {
         return res.status(400).json({ 
-          message: `Unsupported file type: .${extension}. Please use TXT files or copy/paste your text directly.` 
+          message: `Unsupported file type: .${extension}. Please use TXT, DOC, or DOCX files.` 
         });
       }
 

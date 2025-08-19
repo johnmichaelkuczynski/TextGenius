@@ -57,13 +57,14 @@ export default function Home() {
   useEffect(() => {
     if (analysisData && typeof analysisData === 'object' && 'overallScore' in analysisData && analysisData.overallScore !== null) {
       setIsAnalyzing(false);
+      const data = analysisData as any;
       setAnalysisResults({
-        id: analysisData.id as string,
-        overallScore: analysisData.overallScore as number,
-        processingTime: analysisData.processingTime as number,
-        results: (analysisData.results as any)?.results || [],
-        document2Results: (analysisData.results as any)?.document2Results,
-        comparisonResults: (analysisData.results as any)?.comparisonResults,
+        id: data.id,
+        overallScore: data.overallScore,
+        processingTime: data.processingTime,
+        results: data.results?.results || [],
+        document2Results: data.results?.document2Results,
+        comparisonResults: data.results?.comparisonResults,
       });
     }
   }, [analysisData]);

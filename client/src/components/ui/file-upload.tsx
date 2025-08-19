@@ -48,7 +48,7 @@ export function FileUpload({ onFileSelect, onTextChange, text, accept = '.txt,.d
             Drop files here or{' '}
             <span className="text-primary-600 hover:text-primary-700 font-medium">browse</span>
           </p>
-          <p className="text-xs text-gray-500 mt-1">Supports TXT, DOC, DOCX, PDF</p>
+          <p className="text-xs text-gray-500 mt-1">✓ Supports TXT, DOC, DOCX files (PDF coming soon)</p>
         </div>
       </div>
 
