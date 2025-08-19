@@ -244,12 +244,9 @@ async function processDocument(
         }
       } catch (error) {
         console.error(`Error processing chunk ${i} for question "${question}":`, error);
-        chunkResults.push({
-          chunkIndex: i,
-          score: 0,
-          explanation: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          quotes: []
-        });
+        // For critical analysis failures, throw the error to stop processing
+        // This prevents "canned scores" from averaging failed attempts
+        throw new Error(`Analysis failed for ${provider}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -262,23 +259,22 @@ async function processDocument(
 }
 
 function amalgamateChunkResults(question: string, chunkResults: any[]) {
-  // Calculate average score
-  const validResults = chunkResults.filter(r => r.score > 0);
-  const averageScore = validResults.length > 0 
-    ? Math.round(validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length)
-    : 0;
+  // Ensure we have valid results - no mixing of real scores with error fallbacks
+  const validResults = chunkResults.filter(r => r.score > 0 && !r.explanation.startsWith('Error:'));
+  
+  if (validResults.length === 0) {
+    throw new Error('No valid analysis results obtained - all chunks failed processing');
+  }
 
-  // Combine explanations
-  const explanations = chunkResults
-    .filter(r => r.explanation && !r.explanation.startsWith('Error:'))
-    .map(r => r.explanation);
+  // Calculate average score from valid results only
+  const averageScore = Math.round(validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length);
 
-  const combinedExplanation = explanations.length > 0
-    ? explanations.join('\n\n')
-    : 'Unable to generate explanation due to processing errors.';
+  // Combine explanations from valid results only
+  const explanations = validResults.map(r => r.explanation);
+  const combinedExplanation = explanations.join('\n\n');
 
-  // Combine quotes
-  const allQuotes = chunkResults
+  // Combine quotes from valid results only
+  const allQuotes = validResults
     .flatMap(r => r.quotes || [])
     .filter(quote => quote && quote.trim().length > 0);
 

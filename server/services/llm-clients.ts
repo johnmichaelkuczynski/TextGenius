@@ -157,7 +157,9 @@ ${text}`;
   }
 
   private async callAnthropic(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
+    // Use environment API key if user didn't provide one
+    const key = apiKey || process.env.ANTHROPIC_API_KEY;
+    if (!key) {
       throw new Error('Anthropic API key not provided');
     }
 
@@ -218,14 +220,16 @@ ${text}`;
   }
 
   private async callPerplexity(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
+    // Use environment API key if user didn't provide one
+    const key = apiKey || process.env.PERPLEXITY_API_KEY;
+    if (!key) {
       throw new Error('Perplexity API key not provided');
     }
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
