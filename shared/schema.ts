@@ -1,0 +1,88 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, jsonb, timestamp, integer } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const analyses = pgTable("analyses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentMode: text("document_mode").notNull(), // 'single' | 'dual'
+  llmProvider: text("llm_provider").notNull(), // 'anthropic' | 'openai' | 'perplexity' | 'deepseek'
+  evaluationParam: text("evaluation_param").notNull(), // 'originality' | 'intelligence' | 'cogency' | 'quality'
+  analysisMode: text("analysis_mode").notNull(), // 'quick' | 'comprehensive'
+  document1Text: text("document1_text").notNull(),
+  document2Text: text("document2_text"),
+  results: jsonb("results").notNull(),
+  overallScore: integer("overall_score"),
+  processingTime: integer("processing_time"), // in seconds
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAnalysisSchema = createInsertSchema(analyses).pick({
+  documentMode: true,
+  llmProvider: true,
+  evaluationParam: true,
+  analysisMode: true,
+  document1Text: true,
+  document2Text: true,
+});
+
+export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
+export type Analysis = typeof analyses.$inferSelect;
+
+// API Request/Response Types
+export const analysisRequestSchema = z.object({
+  documentMode: z.enum(['single', 'dual']),
+  llmProvider: z.enum(['anthropic', 'openai', 'perplexity', 'deepseek']),
+  evaluationParam: z.enum(['originality', 'intelligence', 'cogency', 'quality']),
+  analysisMode: z.enum(['quick', 'comprehensive']),
+  document1Text: z.string().min(1),
+  document2Text: z.string().optional(),
+});
+
+export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
+
+export const chunkResultSchema = z.object({
+  chunkIndex: z.number(),
+  score: z.number().min(0).max(100),
+  explanation: z.string(),
+  quotes: z.array(z.string()),
+  question: z.string(),
+});
+
+export type ChunkResult = z.infer<typeof chunkResultSchema>;
+
+export const analysisResultSchema = z.object({
+  id: z.string(),
+  overallScore: z.number(),
+  processingTime: z.number(),
+  results: z.array(z.object({
+    question: z.string(),
+    score: z.number(),
+    explanation: z.string(),
+    quotes: z.array(z.string()),
+  })),
+  document2Results: z.array(z.object({
+    question: z.string(),
+    score: z.number(),
+    explanation: z.string(),
+    quotes: z.array(z.string()),
+  })).optional(),
+  comparisonResults: z.object({
+    explanation: z.string(),
+    scores: z.object({
+      document1: z.number(),
+      document2: z.number(),
+    }),
+  }).optional(),
+});
+
+export type AnalysisResult = z.infer<typeof analysisResultSchema>;
+
+export const apiKeysSchema = z.object({
+  anthropic: z.string().optional(),
+  openai: z.string().optional(),
+  perplexity: z.string().optional(),
+  deepseek: z.string().optional(),
+});
+
+export type ApiKeys = z.infer<typeof apiKeysSchema>;
