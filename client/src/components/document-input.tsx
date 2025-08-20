@@ -1,9 +1,11 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { FileUpload } from '@/components/ui/file-upload';
 import { ChunkSelector } from '@/components/chunk-selector';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Trash2 } from 'lucide-react';
 
 interface DocumentInputProps {
   title: string;
@@ -53,6 +55,18 @@ export function DocumentInput({ title, text, onTextChange, selectedChunks, onChu
             {title}
             {required && <span className="text-sm font-normal text-gray-500 ml-2">(Required)</span>}
           </h3>
+          {text.trim() && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onTextChange('')}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              data-testid="clear-document"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
         
         <FileUpload
