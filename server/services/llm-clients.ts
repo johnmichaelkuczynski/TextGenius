@@ -251,7 +251,7 @@ ${text}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar',
         messages: [
           {
             role: 'system',
@@ -269,7 +269,70 @@ ${text}`;
     });
 
     if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      
+      // Handle invalid model errors specifically
+      if (response.status === 400 && errorData.type === 'invalid_model') {
+        console.error('Invalid Perplexity model, falling back to sonar');
+        // Retry with basic sonar model
+        const retryResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'sonar',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert text analyst. Respond only with valid JSON in the exact format requested.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            max_tokens: 2000,
+            temperature: 0.2,
+            stream: false,
+          }),
+        });
+        
+        if (!retryResponse.ok) {
+          throw new Error(`Perplexity API error after retry: ${retryResponse.statusText}`);
+        }
+        
+        const retryData = await retryResponse.json();
+        const content = retryData.choices[0].message.content;
+        
+        // Process the retry response
+        let cleanedContent = content.trim();
+        const jsonStart = cleanedContent.indexOf('{');
+        const jsonEnd = cleanedContent.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
+        }
+
+        try {
+          const parsed = JSON.parse(cleanedContent);
+          return {
+            score: Math.max(0, Math.min(100, parsed.score || 0)),
+            explanation: parsed.explanation || 'Unable to generate explanation due to processing errors.',
+            quotes: Array.isArray(parsed.quotes) ? parsed.quotes : []
+          };
+        } catch (error) {
+          console.error('Perplexity JSON parsing failed on retry:', error);
+          return {
+            score: 0,
+            explanation: 'Unable to generate explanation due to Perplexity model configuration issues.',
+            quotes: []
+          };
+        }
+      }
+      
+      throw new Error(`Perplexity API error: ${response.statusText} (Status: ${response.status})`);
     }
 
     const data = await response.json();

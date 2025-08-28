@@ -55,16 +55,16 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600" data-testid="doc1-score">
-                    {results.results && results.results.length > 0 
-                      ? Math.round(results.results.reduce((sum, r) => sum + r.score, 0) / results.results.length)
+                    {results.results && Array.isArray(results.results) && results.results.length > 0 
+                      ? Math.round(results.results.reduce((sum, r) => sum + (r?.score || 0), 0) / results.results.length)
                       : 0}
                   </div>
                   <div className="text-sm text-gray-600">Document 1</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600" data-testid="doc2-score">
-                    {results.document2Results && results.document2Results.length > 0
-                      ? Math.round(results.document2Results.reduce((sum, r) => sum + r.score, 0) / results.document2Results.length)
+                    {results.document2Results && Array.isArray(results.document2Results) && results.document2Results.length > 0
+                      ? Math.round(results.document2Results.reduce((sum, r) => sum + (r?.score || 0), 0) / results.document2Results.length)
                       : 0}
                   </div>
                   <div className="text-sm text-gray-600">Document 2</div>
@@ -75,7 +75,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-gray-900" data-testid="processing-time">
-                    {formatTime(results.processingTime)}
+                    {formatTime(results.processingTime || 0)}
                   </div>
                   <div className="text-sm text-gray-600">Processing Time</div>
                 </div>
@@ -85,7 +85,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-primary-600" data-testid="overall-score">
-                    {results.overallScore}
+                    {results.overallScore || 0}
                   </div>
                   <div className="text-sm text-gray-600">Overall Score</div>
                 </div>
@@ -99,7 +99,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-gray-900" data-testid="processing-time">
-                    {formatTime(results.processingTime)}
+                    {formatTime(results.processingTime || 0)}
                   </div>
                   <div className="text-sm text-gray-600">Processing Time</div>
                 </div>
@@ -112,7 +112,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
             <h4 className="text-xl font-semibold text-gray-900">
               {results.document2Results ? 'Document 1 Analysis' : 'Document Analysis'}
             </h4>
-            {(results.results && results.results.length > 0) ? results.results.map((result, index) => (
+            {(results.results && Array.isArray(results.results) && results.results.length > 0) ? results.results.map((result, index) => (
               <Card key={index} className="border border-gray-200">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -128,8 +128,8 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                     </Badge>
                   </div>
                   <div className="prose prose-sm max-w-none text-gray-700">
-                    <p>{result.explanation}</p>
-                    {result.quotes.length > 0 && (
+                    <p>{result.explanation || 'Analysis in progress...'}</p>
+                    {result.quotes && Array.isArray(result.quotes) && result.quotes.length > 0 && (
                       <div className="mt-4">
                         <h6 className="font-medium text-gray-900 mb-2">Key Quotes:</h6>
                         {result.quotes.map((quote, quoteIndex) => (
@@ -156,7 +156,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
           {results.document2Results && (
             <div className="space-y-6 mt-8">
               <h4 className="text-xl font-semibold text-gray-900">Document 2 Analysis</h4>
-              {(results.document2Results && results.document2Results.length > 0) ? results.document2Results.map((result, index) => (
+              {(results.document2Results && Array.isArray(results.document2Results) && results.document2Results.length > 0) ? results.document2Results.map((result, index) => (
                 <Card key={index} className="border border-gray-200">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -203,18 +203,18 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                 <CardContent className="p-6">
                   <h4 className="text-xl font-semibold text-gray-900 mb-4">Comparative Analysis</h4>
                   <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-                    <p>{results.comparisonResults.explanation}</p>
+                    <p>{results.comparisonResults?.explanation || 'Comparison analysis in progress...'}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
-                        {results.comparisonResults.scores.document1}
+                        {results.comparisonResults?.scores?.document1 || 0}
                       </div>
                       <div className="text-sm text-gray-600">Document 1 Score</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {results.comparisonResults.scores.document2}
+                        {results.comparisonResults?.scores?.document2 || 0}
                       </div>
                       <div className="text-sm text-gray-600">Document 2 Score</div>
                     </div>
