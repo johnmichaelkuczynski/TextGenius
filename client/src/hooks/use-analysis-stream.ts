@@ -35,16 +35,19 @@ export function useAnalysisStream(analysisId: string | null) {
           
           case 'update':
             if (data.analysis) {
-              // Transform the analysis data to match our AnalysisResult interface
-              const transformedAnalysis: AnalysisResult = {
-                id: data.analysis.id,
-                overallScore: data.analysis.overallScore || 0,
-                processingTime: data.analysis.processingTime || 0,
-                results: data.analysis.results?.results || data.analysis.results || [],
-                document2Results: data.analysis.results?.document2Results,
-                comparisonResults: data.analysis.results?.comparisonResults,
-              };
-              setAnalysis(transformedAnalysis);
+              // Only update if we have valid results data
+              if (data.analysis.overallScore !== null && data.analysis.overallScore !== undefined) {
+                // Transform the analysis data to match our AnalysisResult interface
+                const transformedAnalysis: AnalysisResult = {
+                  id: data.analysis.id,
+                  overallScore: data.analysis.overallScore,
+                  processingTime: data.analysis.processingTime || 0,
+                  results: data.analysis.results?.results || [],
+                  document2Results: data.analysis.results?.document2Results,
+                  comparisonResults: data.analysis.results?.comparisonResults,
+                };
+                setAnalysis(transformedAnalysis);
+              }
             }
             break;
 

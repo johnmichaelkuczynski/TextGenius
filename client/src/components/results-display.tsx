@@ -55,13 +55,17 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600" data-testid="doc1-score">
-                    {Math.round(results.results.reduce((sum, r) => sum + r.score, 0) / results.results.length)}
+                    {results.results && results.results.length > 0 
+                      ? Math.round(results.results.reduce((sum, r) => sum + r.score, 0) / results.results.length)
+                      : 0}
                   </div>
                   <div className="text-sm text-gray-600">Document 1</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600" data-testid="doc2-score">
-                    {Math.round(results.document2Results.reduce((sum, r) => sum + r.score, 0) / results.document2Results.length)}
+                    {results.document2Results && results.document2Results.length > 0
+                      ? Math.round(results.document2Results.reduce((sum, r) => sum + r.score, 0) / results.document2Results.length)
+                      : 0}
                   </div>
                   <div className="text-sm text-gray-600">Document 2</div>
                 </div>
@@ -108,7 +112,7 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
             <h4 className="text-xl font-semibold text-gray-900">
               {results.document2Results ? 'Document 1 Analysis' : 'Document Analysis'}
             </h4>
-            {results.results.map((result, index) => (
+            {(results.results && results.results.length > 0) ? results.results.map((result, index) => (
               <Card key={index} className="border border-gray-200">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -141,14 +145,18 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-gray-500">
+                Analysis in progress...
+              </div>
+            )}
           </div>
 
           {/* Document 2 Results */}
           {results.document2Results && (
             <div className="space-y-6 mt-8">
               <h4 className="text-xl font-semibold text-gray-900">Document 2 Analysis</h4>
-              {results.document2Results.map((result, index) => (
+              {(results.document2Results && results.document2Results.length > 0) ? results.document2Results.map((result, index) => (
                 <Card key={index} className="border border-gray-200">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -180,7 +188,11 @@ export function ResultsDisplay({ results, isVisible, onDownloadReport, onNewAnal
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  Document 2 analysis in progress...
+                </div>
+              )}
             </div>
           )}
 
