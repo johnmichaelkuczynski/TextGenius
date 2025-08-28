@@ -120,6 +120,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Streaming analysis endpoint for real-time updates
+  app.get("/api/analysis/:id/stream", (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    const analysisId = req.params.id;
+    
+    // Send initial connection event
+    res.write(`data: ${JSON.stringify({ type: 'connected', analysisId })}\n\n`);
+
+    // Set up polling to check for updates
+    const pollInterval = setInterval(async () => {
+      try {
+        const analysis = await storage.getAnalysis(analysisId);
+        if (analysis) {
+          res.write(`data: ${JSON.stringify({ 
+            type: 'update', 
+            analysis: analysis 
+          })}\n\n`);
+          
+          // If analysis is complete, close the stream
+          if (analysis.overallScore !== null && analysis.overallScore !== undefined) {
+            clearInterval(pollInterval);
+            res.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);
+            res.end();
+          }
+        }
+      } catch (error) {
+        console.error('Streaming error:', error);
+        clearInterval(pollInterval);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'Failed to get analysis updates' 
+        })}\n\n`);
+        res.end();
+      }
+    }, 500); // Poll every 500ms for faster updates
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+      clearInterval(pollInterval);
+    });
+  });
+
   // Download report endpoint
   app.get("/api/analysis/:id/report", async (req, res) => {
     try {

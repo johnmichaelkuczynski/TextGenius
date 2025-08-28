@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Microscope, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { AnalysisConfigPanel } from '@/components/analysis-config';
 import { DocumentInput } from '@/components/document-input';
 import { ProgressTracker } from '@/components/progress-tracker';
 import { ResultsDisplay } from '@/components/results-display';
+import { useAnalysisStream } from '@/hooks/use-analysis-stream';
 import { ApiKeys, AnalysisRequest, AnalysisResult } from '@shared/schema';
 
 interface AnalysisConfig {
@@ -35,7 +36,9 @@ export default function Home() {
   const [selectedChunks2, setSelectedChunks2] = useState<number[]>([]);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
+
+  // Use streaming hook for real-time updates
+  const { analysis, isConnected, error: streamError, isComplete } = useAnalysisStream(analysisId);
 
   // Load API keys from localStorage
   useEffect(() => {
@@ -49,27 +52,23 @@ export default function Home() {
     }
   }, []);
 
-  // Poll for analysis results
-  const { data: analysisData, refetch } = useQuery({
-    queryKey: ['/api/analysis', analysisId],
-    enabled: !!analysisId && isAnalyzing,
-    refetchInterval: 2000,
-  });
-
+  // Handle stream completion
   useEffect(() => {
-    if (analysisData && typeof analysisData === 'object' && 'overallScore' in analysisData && analysisData.overallScore !== null) {
+    if (isComplete) {
       setIsAnalyzing(false);
-      const data = analysisData as any;
-      setAnalysisResults({
-        id: data.id,
-        overallScore: data.overallScore,
-        processingTime: data.processingTime,
-        results: data.results?.results || [],
-        document2Results: data.results?.document2Results,
-        comparisonResults: data.results?.comparisonResults,
+    }
+  }, [isComplete]);
+
+  // Handle stream errors
+  useEffect(() => {
+    if (streamError) {
+      toast({
+        title: "Streaming Error",
+        description: streamError,
+        variant: "destructive",
       });
     }
-  }, [analysisData]);
+  }, [streamError, toast]);
 
   const startAnalysisMutation = useMutation({
     mutationFn: async (request: AnalysisRequest & { apiKeys: ApiKeys }) => {
@@ -79,7 +78,6 @@ export default function Home() {
     onSuccess: (data) => {
       setAnalysisId(data.analysisId);
       setIsAnalyzing(true);
-      setAnalysisResults(null);
       toast({
         title: "Analysis started",
         description: "Your text analysis is now in progress.",
@@ -178,7 +176,6 @@ export default function Home() {
   const handleNewAnalysis = () => {
     setAnalysisId(null);
     setIsAnalyzing(false);
-    setAnalysisResults(null);
     setDocument1Text('');
     setDocument2Text('');
   };
@@ -305,8 +302,8 @@ export default function Home() {
 
         {/* Results Display */}
         <ResultsDisplay
-          results={analysisResults}
-          isVisible={!!analysisResults}
+          results={analysis}
+          isVisible={!!analysis}
           onDownloadReport={handleDownloadReport}
           onNewAnalysis={handleNewAnalysis}
         />

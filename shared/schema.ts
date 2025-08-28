@@ -11,6 +11,7 @@ export const analyses = pgTable("analyses", {
   analysisMode: text("analysis_mode").notNull(), // 'quick' | 'comprehensive'
   document1Text: text("document1_text").notNull(),
   document2Text: text("document2_text"),
+  status: text("status").default("pending"), // pending, processing, complete, error
   results: jsonb("results").notNull(),
   overallScore: integer("overall_score"),
   processingTime: integer("processing_time"), // in seconds
