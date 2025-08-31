@@ -126,46 +126,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      'Access-Control-Allow-Headers': 'Cache-Control',
+      'X-Accel-Buffering': 'no' // Disable buffering for nginx/proxies
     });
 
     const analysisId = req.params.id;
+    let isConnected = true;
     
     // Send initial connection event
-    res.write(`data: ${JSON.stringify({ type: 'connected', analysisId })}\n\n`);
+    const sendEvent = (data: any) => {
+      if (!isConnected) return false;
+      try {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+        return true;
+      } catch (error) {
+        console.error('Failed to write to stream:', error);
+        isConnected = false;
+        return false;
+      }
+    };
+
+    sendEvent({ type: 'connected', analysisId });
+
+    // Send heartbeat to keep connection alive
+    const heartbeatInterval = setInterval(() => {
+      if (!sendEvent({ type: 'heartbeat' })) {
+        clearInterval(heartbeatInterval);
+      }
+    }, 30000); // Send heartbeat every 30 seconds
 
     // Set up polling to check for updates
     const pollInterval = setInterval(async () => {
       try {
         const analysis = await storage.getAnalysis(analysisId);
-        if (analysis) {
-          res.write(`data: ${JSON.stringify({ 
-            type: 'update', 
-            analysis: analysis 
-          })}\n\n`);
+        if (analysis && isConnected) {
+          if (!sendEvent({ type: 'update', analysis: analysis })) {
+            clearInterval(pollInterval);
+            clearInterval(heartbeatInterval);
+            return;
+          }
           
           // If analysis is complete, close the stream
           if (analysis.overallScore !== null && analysis.overallScore !== undefined) {
             clearInterval(pollInterval);
-            res.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);
+            clearInterval(heartbeatInterval);
+            sendEvent({ type: 'complete' });
             res.end();
           }
         }
       } catch (error) {
         console.error('Streaming error:', error);
         clearInterval(pollInterval);
-        res.write(`data: ${JSON.stringify({ 
-          type: 'error', 
-          error: 'Failed to get analysis updates' 
-        })}\n\n`);
-        res.end();
+        clearInterval(heartbeatInterval);
+        if (isConnected) {
+          sendEvent({ type: 'error', error: 'Failed to get analysis updates' });
+          res.end();
+        }
       }
-    }, 500); // Poll every 500ms for faster updates
+    }, 2000); // Poll every 2 seconds to reduce server load
 
     // Clean up on client disconnect
-    req.on('close', () => {
+    const cleanup = () => {
+      isConnected = false;
       clearInterval(pollInterval);
-    });
+      clearInterval(heartbeatInterval);
+    };
+
+    req.on('close', cleanup);
+    req.on('error', cleanup);
+    res.on('close', cleanup);
   });
 
   // Download report endpoint
