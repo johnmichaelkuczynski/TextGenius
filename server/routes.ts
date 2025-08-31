@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import { storage } from "./storage";
-import { analysisRequestSchema, type AnalysisRequest, apiKeysSchema } from "@shared/schema";
+import { analysisRequestSchema, type AnalysisRequest } from "@shared/schema";
 import { getQuestions } from "./services/question-sets";
 import { LLMClients } from "./services/llm-clients";
 import { TextProcessor } from "./services/text-processor";
@@ -82,13 +82,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analysis", async (req, res) => {
     try {
       const validatedRequest = analysisRequestSchema.parse(req.body);
-      const apiKeys = apiKeysSchema.parse(req.body.apiKeys || {});
 
       // Create analysis record
       const analysis = await storage.createAnalysis(validatedRequest);
 
       // Start background processing
-      processAnalysisAsync(analysis.id, validatedRequest, apiKeys);
+      processAnalysisAsync(analysis.id, validatedRequest);
 
       res.json({ 
         analysisId: analysis.id,
@@ -201,13 +200,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 async function processAnalysisAsync(
   analysisId: string, 
-  request: AnalysisRequest, 
-  apiKeys: any
+  request: AnalysisRequest
 ) {
   const startTime = Date.now();
   
   try {
-    const llmClient = new LLMClients(apiKeys);
+    const llmClient = new LLMClients();
     const questions = getQuestions(request.evaluationParam, request.analysisMode);
 
     // Process document 1
@@ -216,7 +214,6 @@ async function processAnalysisAsync(
       questions, 
       request.llmProvider, 
       llmClient,
-      apiKeys,
       request.selectedChunks1
     );
 
@@ -230,7 +227,6 @@ async function processAnalysisAsync(
         questions, 
         request.llmProvider, 
         llmClient,
-        apiKeys,
         request.selectedChunks2
       );
 
@@ -242,8 +238,7 @@ async function processAnalysisAsync(
         doc2Results,
         request.evaluationParam,
         request.llmProvider,
-        llmClient,
-        apiKeys
+        llmClient
       );
     }
 
@@ -272,7 +267,6 @@ async function processDocument(
   questions: string[],
   provider: string,
   llmClient: LLMClients,
-  apiKeys: any,
   selectedChunks?: number[]
 ) {
   const allChunks = TextProcessor.chunkText(text);
@@ -296,7 +290,7 @@ async function processDocument(
       const chunk = chunksToProcess[i];
       
       try {
-        const result = await llmClient.analyzeText(provider, chunk.text, question, apiKeys);
+        const result = await llmClient.analyzeText(provider, chunk.text, question);
         chunkResults.push({
           chunkIndex: chunk.index, // Use original chunk index
           ...result
@@ -361,8 +355,7 @@ async function generateComparison(
   doc2Results: any[],
   evaluationParam: string,
   provider: string,
-  llmClient: LLMClients,
-  apiKeys: any
+  llmClient: LLMClients
 ) {
   const comparisonPrompt = `Compare these two documents based on ${evaluationParam}. 
 
@@ -382,7 +375,7 @@ Provide a comparative analysis in JSON format:
 }`;
 
   try {
-    const result = await llmClient.analyzeText(provider, comparisonPrompt, 'Provide a comparative analysis', apiKeys);
+    const result = await llmClient.analyzeText(provider, comparisonPrompt, 'Provide a comparative analysis');
     
     // Try to parse the explanation as JSON first
     let comparisonResult;

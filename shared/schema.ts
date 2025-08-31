@@ -81,11 +81,3 @@ export const analysisResultSchema = z.object({
 
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;
 
-export const apiKeysSchema = z.object({
-  anthropic: z.string().optional(),
-  openai: z.string().optional(),
-  perplexity: z.string().optional(),
-  deepseek: z.string().optional(),
-});
-
-export type ApiKeys = z.infer<typeof apiKeysSchema>;

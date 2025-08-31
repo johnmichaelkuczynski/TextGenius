@@ -23,21 +23,17 @@ export class LLMClients {
   private anthropic?: Anthropic;
   private openai?: OpenAI;
 
-  constructor(apiKeys: {
-    anthropic?: string;
-    openai?: string;
-    perplexity?: string;
-    deepseek?: string;
-  }) {
-    if (apiKeys.anthropic) {
+  constructor() {
+    // Use server-side environment variables for API keys
+    if (process.env.ANTHROPIC_API_KEY) {
       this.anthropic = new Anthropic({
-        apiKey: apiKeys.anthropic,
+        apiKey: process.env.ANTHROPIC_API_KEY,
       });
     }
 
-    if (apiKeys.openai) {
+    if (process.env.OPENAI_API_KEY) {
       this.openai = new OpenAI({
-        apiKey: apiKeys.openai,
+        apiKey: process.env.OPENAI_API_KEY,
       });
     }
   }
@@ -46,7 +42,6 @@ export class LLMClients {
     provider: string,
     text: string,
     question: string,
-    apiKeys: any,
     phase: number = 1,
     previousScore?: number
   ): Promise<LLMResponse> {
@@ -54,13 +49,13 @@ export class LLMClients {
 
     switch (provider) {
       case 'anthropic':
-        return this.callAnthropic(prompt, apiKeys.anthropic);
+        return this.callAnthropic(prompt);
       case 'openai':
-        return this.callOpenAI(prompt, apiKeys.openai);
+        return this.callOpenAI(prompt);
       case 'perplexity':
-        return this.callPerplexity(prompt, apiKeys.perplexity);
+        return this.callPerplexity(prompt);
       case 'deepseek':
-        return this.callDeepSeek(prompt, apiKeys.deepseek);
+        return this.callDeepSeek(prompt);
       default:
         throw new Error(`Unsupported LLM provider: ${provider}`);
     }
@@ -161,14 +156,12 @@ ${text}`;
     }
   }
 
-  private async callAnthropic(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
-      throw new Error('Anthropic API key not provided');
+  private async callAnthropic(prompt: string): Promise<LLMResponse> {
+    if (!this.anthropic) {
+      throw new Error('Anthropic API key not configured on server');
     }
 
-    const anthropic = new Anthropic({ apiKey });
-
-    const response = await anthropic.messages.create({
+    const response = await this.anthropic.messages.create({
       model: DEFAULT_ANTHROPIC_MODEL, // "claude-sonnet-4-20250514"
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
@@ -208,15 +201,14 @@ ${text}`;
     }
   }
 
-  private async callOpenAI(prompt: string, apiKey: string): Promise<LLMResponse> {
-    if (!apiKey) {
-      throw new Error('OpenAI API key not provided');
+  private async callOpenAI(prompt: string): Promise<LLMResponse> {
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured on server');
     }
 
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    const openai = new OpenAI({ apiKey });
 
-    const response = await openai.chat.completions.create({
+    const response = await this.openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: "json_object" },
@@ -239,9 +231,10 @@ ${text}`;
     }
   }
 
-  private async callPerplexity(prompt: string, apiKey: string): Promise<LLMResponse> {
+  private async callPerplexity(prompt: string): Promise<LLMResponse> {
+    const apiKey = process.env.PERPLEXITY_API_KEY;
     if (!apiKey) {
-      throw new Error('Perplexity API key not provided');
+      throw new Error('Perplexity API key not configured on server');
     }
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -367,9 +360,10 @@ ${text}`;
     }
   }
 
-  private async callDeepSeek(prompt: string, apiKey: string): Promise<LLMResponse> {
+  private async callDeepSeek(prompt: string): Promise<LLMResponse> {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      throw new Error('DeepSeek API key not provided');
+      throw new Error('DeepSeek API key not configured on server');
     }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {

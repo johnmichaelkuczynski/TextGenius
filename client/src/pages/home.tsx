@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Microscope, Key } from 'lucide-react';
+import { Microscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { ApiKeysModal } from '@/components/api-keys-modal';
 import { AnalysisConfigPanel } from '@/components/analysis-config';
 import { DocumentInput } from '@/components/document-input';
 import { ProgressTracker } from '@/components/progress-tracker';
 import { ResultsDisplay } from '@/components/results-display';
 import { useAnalysisStream } from '@/hooks/use-analysis-stream';
-import { ApiKeys, AnalysisRequest, AnalysisResult } from '@shared/schema';
+import { AnalysisRequest, AnalysisResult } from '@shared/schema';
 
 interface AnalysisConfig {
   documentMode: 'single' | 'dual';
@@ -22,8 +21,6 @@ interface AnalysisConfig {
 
 export default function Home() {
   const { toast } = useToast();
-  const [apiKeysOpen, setApiKeysOpen] = useState(false);
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [config, setConfig] = useState<AnalysisConfig>({
     documentMode: 'single',
     llmProvider: 'anthropic',
@@ -39,18 +36,6 @@ export default function Home() {
 
   // Use streaming hook for real-time updates
   const { analysis, isConnected, error: streamError, isComplete } = useAnalysisStream(analysisId);
-
-  // Load API keys from localStorage
-  useEffect(() => {
-    const savedKeys = localStorage.getItem('apiKeys');
-    if (savedKeys) {
-      try {
-        setApiKeys(JSON.parse(savedKeys));
-      } catch (error) {
-        console.error('Failed to load saved API keys:', error);
-      }
-    }
-  }, []);
 
   // Handle stream completion
   useEffect(() => {
@@ -71,7 +56,7 @@ export default function Home() {
   }, [streamError, toast]);
 
   const startAnalysisMutation = useMutation({
-    mutationFn: async (request: AnalysisRequest & { apiKeys: ApiKeys }) => {
+    mutationFn: async (request: AnalysisRequest) => {
       const response = await apiRequest('POST', '/api/analysis', request);
       return response.json();
     },
@@ -92,14 +77,6 @@ export default function Home() {
     },
   });
 
-  const handleApiKeysSave = (keys: ApiKeys) => {
-    setApiKeys(keys);
-    localStorage.setItem('apiKeys', JSON.stringify(keys));
-    toast({
-      title: "API keys saved",
-      description: "Your API keys have been configured successfully.",
-    });
-  };
 
   const handleStartAnalysis = () => {
     // Validate inputs
@@ -121,19 +98,7 @@ export default function Home() {
       return;
     }
 
-    // Check if API key is available for selected provider
-    const requiredKey = apiKeys[config.llmProvider];
-    if (!requiredKey) {
-      toast({
-        title: "API key required",
-        description: `Please configure your ${config.llmProvider} API key.`,
-        variant: "destructive",
-      });
-      setApiKeysOpen(true);
-      return;
-    }
-
-    const request: AnalysisRequest & { apiKeys: ApiKeys } = {
+    const request: AnalysisRequest = {
       documentMode: config.documentMode,
       llmProvider: config.llmProvider,
       evaluationParam: config.evaluationParam,
@@ -142,7 +107,6 @@ export default function Home() {
       document2Text: config.documentMode === 'dual' ? document2Text : undefined,
       selectedChunks1: selectedChunks1.length > 0 ? selectedChunks1 : undefined,
       selectedChunks2: config.documentMode === 'dual' && selectedChunks2.length > 0 ? selectedChunks2 : undefined,
-      apiKeys,
     };
 
     startAnalysisMutation.mutate(request);
@@ -212,27 +176,12 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">Advanced Text Analysis</span>
-              <Button
-                onClick={() => setApiKeysOpen(true)}
-                className="bg-primary-600 hover:bg-primary-700"
-                data-testid="configure-api-keys"
-              >
-                <Key className="mr-2 h-4 w-4" />
-                Configure API Keys
-              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* API Keys Modal */}
-        <ApiKeysModal
-          open={apiKeysOpen}
-          onOpenChange={setApiKeysOpen}
-          onSave={handleApiKeysSave}
-          initialKeys={apiKeys}
-        />
 
         {/* Configuration Panel */}
         <AnalysisConfigPanel
